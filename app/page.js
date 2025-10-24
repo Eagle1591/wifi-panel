@@ -1,3 +1,5 @@
+"use client"
+
 import Layout from '../components/Layout'
 import AnimatedBackground from '../components/AnimatedBackground'
 import Link from 'next/link'
