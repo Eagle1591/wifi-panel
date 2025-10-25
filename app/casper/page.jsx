@@ -55,12 +55,12 @@ export default function Downloader() {
 
   async function fetchSearchResults(query) {
     try {
-      console.log("Fetching search results...");
+      console.log("Fetching search results via proxy...");
       
-      // Try direct API call first
-      const apiUrl = `https://casper-tech-apis.vercel.app/api/search/youtube?query=${encodeURIComponent(query)}`;
+      // Use the Next.js API proxy
+      const proxyUrl = `/api/youtube-search?query=${encodeURIComponent(query)}`;
       
-      const response = await fetch(apiUrl, {
+      const response = await fetch(proxyUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -68,16 +68,16 @@ export default function Downloader() {
       });
       
       if (!response.ok) {
-        throw new Error(`API responded with status: ${response.status}`);
+        throw new Error(`Proxy responded with status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("Search API request successful");
+      console.log("Search via proxy successful");
       return data;
       
     } catch (error) {
-      console.log("Search API request failed:", error);
-      throw new Error("Unable to connect to the search API. Please try again.");
+      console.log("Proxy search request failed:", error);
+      throw new Error("Unable to connect to search service. Please try again.");
     }
   }
 
@@ -87,14 +87,27 @@ export default function Downloader() {
     setSelectedVideo(null)
 
     try {
+      // For download, we can try both direct and proxy approaches
       const apiUrl = `https://casper-tech-apis.vercel.app/api/downloader/yt-dl?url=${encodeURIComponent(videoUrl)}`
       
-      const response = await fetch(apiUrl, {
+      let response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
         }
       })
+
+      // If direct download fails, try via proxy
+      if (!response.ok) {
+        console.log("Direct download failed, trying proxy...");
+        const proxyUrl = `/api/youtube-download?url=${encodeURIComponent(videoUrl)}`;
+        response = await fetch(proxyUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          }
+        });
+      }
 
       if (!response.ok) {
         throw new Error('Failed to fetch download formats')
@@ -250,7 +263,7 @@ export default function Downloader() {
               </div>
 
               <div className="hint">
-                💡 Press Enter to search • Direct API connection • Fast downloads
+                💡 Press Enter to search • Using API proxy • Fast downloads
               </div>
             </div>
           </form>
@@ -260,7 +273,7 @@ export default function Downloader() {
               <div className="status loading">
                 <div className="spinner large"></div>
                 <span>Searching YouTube for "{query}"...</span>
-                <div className="loading-details">Connecting to YouTube API...</div>
+                <div className="loading-details">Using secure API proxy...</div>
               </div>
             )}
 
@@ -446,6 +459,7 @@ export default function Downloader() {
           </section>
         </main>
 
+        {/* CSS styles remain exactly the same as before */}
         <style jsx>{`
           .page-wrapper {
             min-height: 100vh;
