@@ -1,7 +1,7 @@
 "use client"
 
-import Layout from '../components/Layout'
-import AnimatedBackground from '../components/AnimatedBackground'
+import Layout from '../../components/Layout'
+import AnimatedBackground from '../../components/AnimatedBackground'
 import { useState } from 'react'
 
 export default function Downloader() {
