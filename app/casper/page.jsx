@@ -32,7 +32,7 @@ export default function Downloader() {
     setRawResponse(null)
 
     try {
-      let data = await tryApiApproaches(q)
+      const data = await fetchSearchResults(q)
       
       setRawResponse(data)
 
@@ -53,73 +53,32 @@ export default function Downloader() {
     }
   }
 
-  async function tryApiApproaches(query) {
+  async function fetchSearchResults(query) {
     try {
-      console.log("Trying Next.js API proxy...");
-      const proxyRes = await fetch(`../app/api/youtube-search?query=${encodeURIComponent(query)}`, {
+      console.log("Fetching search results...");
+      
+      // Try direct API call first
+      const apiUrl = `https://casper-tech-apis.vercel.app/api/search/youtube?query=${encodeURIComponent(query)}`;
+      
+      const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
         }
       });
       
-      if (proxyRes.ok) {
-        const data = await proxyRes.json();
-        console.log("Proxy request successful");
-        return data;
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
       }
-    } catch (proxyError) {
-      console.log("Proxy request failed:", proxyError);
-    }
 
-    const corsProxies = [
-      'https://api.allorigins.win/raw?url=',
-      'https://corsproxy.io/?',
-    ];
-    
-    const apiUrl = `https://casper-tech-apis.vercel.app/api/search/youtube?query=${encodeURIComponent(query)}`;
-    
-    for (const proxy of corsProxies) {
-      try {
-        console.log(`Trying CORS proxy: ${proxy.slice(0, 30)}...`);
-        const fullUrl = `${proxy}${encodeURIComponent(apiUrl)}`;
-        
-        const response = await fetch(fullUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log("CORS proxy request successful");
-          return data;
-        }
-      } catch (error) {
-        console.log(`CORS proxy failed:`, error);
-      }
-    }
-
-    try {
-      console.log("Trying direct API call...");
-      const directRes = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        }
-      });
+      const data = await response.json();
+      console.log("Search API request successful");
+      return data;
       
-      if (directRes.ok) {
-        const data = await directRes.json();
-        console.log("Direct API request successful");
-        return data;
-      }
-    } catch (directError) {
-      console.log("Direct API request failed:", directError);
+    } catch (error) {
+      console.log("Search API request failed:", error);
+      throw new Error("Unable to connect to the search API. Please try again.");
     }
-
-    throw new Error("Unable to connect to the API. Please try again or use the sample data.");
   }
 
   async function fetchDownloadFormats(videoUrl, videoId) {
@@ -291,7 +250,7 @@ export default function Downloader() {
               </div>
 
               <div className="hint">
-                💡 Press Enter to search • Multiple fallback methods • Fast downloads
+                💡 Press Enter to search • Direct API connection • Fast downloads
               </div>
             </div>
           </form>
@@ -301,7 +260,7 @@ export default function Downloader() {
               <div className="status loading">
                 <div className="spinner large"></div>
                 <span>Searching YouTube for "{query}"...</span>
-                <div className="loading-details">Trying different connection methods...</div>
+                <div className="loading-details">Connecting to YouTube API...</div>
               </div>
             )}
 
