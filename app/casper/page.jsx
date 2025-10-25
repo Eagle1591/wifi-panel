@@ -58,7 +58,7 @@ export default function Downloader() {
       console.log("Fetching search results via proxy...");
       
       // Use the Next.js API proxy
-      const proxyUrl = `/api/youtube-search?query=${encodeURIComponent(query)}`;
+      const proxyUrl = `../app/api/youtube-search?query=${encodeURIComponent(query)}`;
       
       const response = await fetch(proxyUrl, {
         method: 'GET',
