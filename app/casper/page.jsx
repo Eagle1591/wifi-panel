@@ -29,7 +29,7 @@ export default function Downloader() {
     setRawResponse(null)
 
     try {
-      const res = await fetch(`/api/youtube?query=${encodeURIComponent(q)}`)
+      const res = await fetch(`../api/youtube?query=${encodeURIComponent(q)}`)
       const text = await res.text()
       let data = null
       try {
