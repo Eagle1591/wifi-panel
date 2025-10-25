@@ -33,47 +33,25 @@ export default function Downloader() {
       console.log("Fetching from:", apiUrl)
       
       const res = await fetch(apiUrl)
-      const text = await res.text()
-      let data = null
       
-      try {
-        data = JSON.parse(text)
-      } catch (parseErr) {
-        console.error("JSON parse error:", parseErr)
-        setError("API returned invalid JSON.")
-        setRawResponse(text)
-        setLoading(false)
-        return
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status} ${res.statusText || ""}`)
       }
-
+      
+      const data = await res.json()
       setRawResponse(data)
 
-      if (!res.ok) {
-        setError(`API error: ${res.status} ${res.statusText || ""}`)
-        setResults([])
-        setLoading(false)
-        return
-      }
-
       if (data && data.success && Array.isArray(data.videos)) {
-        // Enhance videos with download links using the videoId
-        const enhancedVideos = data.videos.map(video => ({
-          ...video,
-          downloads: {
-            mp3: `https://casper-tech-apis.vercel.app/api/download/youtube/mp3?videoId=${video.videoId}`,
-            mp4: `https://casper-tech-apis.vercel.app/api/download/youtube/mp4?videoId=${video.videoId}`
-          }
-        }))
-        
-        setResults(enhancedVideos)
-        if (data.videos.length === 0) setError("No videos found for that query.")
+        setResults(data.videos)
+        if (data.videos.length === 0) {
+          setError("No videos found for that query.")
+        }
       } else {
-        setResults([])
-        setError(data?.message || "Unexpected API response format.")
+        throw new Error(data?.message || "Unexpected API response format")
       }
     } catch (err) {
       console.error("Search error:", err)
-      setError("Network error - unable to reach the search API.")
+      setError(err.message || "Failed to search videos. Please try again.")
       setResults([])
     } finally {
       setLoading(false)
@@ -92,6 +70,15 @@ export default function Downloader() {
     }
   }
 
+  function clearSearch() {
+    setQuery("")
+    setResults(null)
+    setError("")
+    setSearched(false)
+    setRawResponse(null)
+    inputRef.current?.focus()
+  }
+
   return (
     <>
       <AnimatedBackground />
@@ -99,30 +86,44 @@ export default function Downloader() {
         <main className={`page-wrapper ${searched ? "scrolled" : ""}`}>
           <form className="search-block" onSubmit={handleSearch} role="search">
             <div className="search-inner">
-              <h1 className="title">YouTube Downloader</h1>
-              <p className="subtitle">Search YouTube and download MP3 / MP4</p>
+              <div className="header-content">
+                <h1 className="title">YouTube Search</h1>
+                <p className="subtitle">Search and discover YouTube videos</p>
+              </div>
 
               <div className="search-row">
-                <input
-                  ref={inputRef}
-                  type="search"
-                  aria-label="Search YouTube"
-                  placeholder="Search YouTube (e.g. shape of you)"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="search-input"
-                  disabled={loading}
-                />
+                <div className="input-container">
+                  <input
+                    ref={inputRef}
+                    type="search"
+                    aria-label="Search YouTube"
+                    placeholder="Enter song, artist, or video name..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="search-input"
+                    disabled={loading}
+                  />
+                  {query && (
+                    <button 
+                      type="button" 
+                      className="clear-btn"
+                      onClick={clearSearch}
+                      aria-label="Clear search"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
                 <button 
                   type="submit" 
                   className="search-btn" 
-                  disabled={loading}
+                  disabled={loading || !query.trim()}
                 >
                   {loading ? (
                     <>
                       <span className="spinner"></span>
-                      Searching…
+                      Searching...
                     </>
                   ) : (
                     "Search"
@@ -131,7 +132,7 @@ export default function Downloader() {
               </div>
 
               <div className="hint">
-                Press Enter or click Search. Powered by Casper Tech API.
+                Press Enter to search • Powered by Casper Tech API
               </div>
             </div>
           </form>
@@ -140,24 +141,33 @@ export default function Downloader() {
             {loading && (
               <div className="status loading">
                 <div className="spinner"></div>
-                🔍 Searching YouTube for "{query}"…
+                <span>Searching YouTube for "{query}"...</span>
               </div>
             )}
 
             {error && !loading && (
               <div className="status error">
-                <strong>Error:</strong> {error}
-                <button className="retry-btn" onClick={handleRetry}>
-                  Try Again
-                </button>
+                <div className="error-content">
+                  <strong>Search Failed</strong>
+                  <p>{error}</p>
+                  <button className="retry-btn" onClick={handleRetry}>
+                    Try Again
+                  </button>
+                </div>
               </div>
             )}
 
             {results && results.length > 0 && (
               <>
-                <div className="results-info">
-                  Found {results.length} video{results.length !== 1 ? 's' : ''} for "{query}"
+                <div className="results-header">
+                  <h2 className="results-title">
+                    Found {results.length} video{results.length !== 1 ? 's' : ''} for "{query}"
+                  </h2>
+                  <button className="new-search-btn" onClick={clearSearch}>
+                    New Search
+                  </button>
                 </div>
+                
                 <div className="grid">
                   {results.map((video, index) => (
                     <article className="card" key={video.videoId ?? index}>
@@ -167,6 +177,9 @@ export default function Downloader() {
                           src={video.thumbnail} 
                           alt={`Thumbnail for ${video.title}`}
                           loading="lazy"
+                          onError={(e) => {
+                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDI4MCAxNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyODAiIGhlaWdodD0iMTYwIiBmaWxsPSIjRjNGM0YzIi8+CjxwYXRoIGQ9Ik0xMDQgODBMMTE2IDg4TDEwNCA5NlY4MFoiIGZpbGw9IiM5OTk5OTkiLz4KPHN2Zz4K'
+                          }}
                         />
                         <div className="duration-badge">{video.duration}</div>
                       </div>
@@ -177,43 +190,31 @@ export default function Downloader() {
                         </h3>
                         
                         <div className="channel-info">
+                          <span className="channel-icon">📺</span>
                           <span className="channel-name">{video.channel}</span>
                         </div>
                         
-                        <div className="meta">
+                        <div className="meta-info">
                           <span className="views">{video.views}</span>
+                          <span className="separator">•</span>
+                          <span className="duration">{video.duration}</span>
                         </div>
 
                         <div className="actions">
                           <a 
-                            className="btn mp3-btn" 
-                            href={video.downloads.mp3}
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            title="Download MP3"
-                          >
-                            🎵 MP3
-                          </a>
-                          
-                          <a 
-                            className="btn mp4-btn" 
-                            href={video.downloads.mp4}
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            title="Download MP4"
-                          >
-                            🎥 MP4
-                          </a>
-
-                          <a 
-                            className="link watch-link" 
+                            className="watch-btn" 
                             href={video.url} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             title="Watch on YouTube"
                           >
-                            ▶ Watch
+                            <span className="btn-icon">▶</span>
+                            Watch on YouTube
                           </a>
+                          
+                          <div className="coming-soon">
+                            Download options coming soon...
+                          </div>
                         </div>
                       </div>
                     </article>
@@ -224,13 +225,19 @@ export default function Downloader() {
 
             {results && results.length === 0 && !loading && !error && (
               <div className="status info">
-                No videos found for "{query}". Try different keywords.
+                <div className="info-content">
+                  <strong>No videos found</strong>
+                  <p>No results found for "{query}". Try different keywords.</p>
+                  <button className="retry-btn" onClick={clearSearch}>
+                    New Search
+                  </button>
+                </div>
               </div>
             )}
 
             {!loading && rawResponse && (
               <details className="raw">
-                <summary>Show raw API response (debug)</summary>
+                <summary>Debug: Show API Response</summary>
                 <pre>{JSON.stringify(rawResponse, null, 2)}</pre>
               </details>
             )}
@@ -280,13 +287,15 @@ export default function Downloader() {
             position: sticky;
             top: 18px;
             margin: 0 auto;
-            padding: 1rem;
-            border-radius: 10px;
+            padding: 1.5rem;
+            border-radius: 12px;
             text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+            display: block;
             z-index: 100;
+          }
+
+          .header-content {
+            margin-bottom: 1.5rem;
           }
 
           .title {
@@ -302,9 +311,18 @@ export default function Downloader() {
             font-size: 0.95rem;
           }
 
-          .page-wrapper.scrolled .title,
+          .page-wrapper.scrolled .header-content {
+            margin-bottom: 1rem;
+          }
+
+          .page-wrapper.scrolled .title {
+            font-size: 1.3rem;
+            margin-bottom: 0.25rem;
+          }
+
           .page-wrapper.scrolled .subtitle {
-            display: none;
+            font-size: 0.9rem;
+            margin: 0;
           }
 
           .search-row {
@@ -319,23 +337,29 @@ export default function Downloader() {
             width: 100%;
           }
 
-          .search-input {
+          .input-container {
+            position: relative;
             flex: 1 1 520px;
             min-width: 160px;
+          }
+
+          .search-input {
+            width: 100%;
             padding: 0.9rem 1rem;
             font-size: 1rem;
             border-radius: 999px;
             border: none;
             outline: none;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
-            background: rgba(255,255,255,0.06);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.08);
             color: #fff;
             transition: all 0.2s ease;
+            padding-right: 2.5rem;
           }
 
           .search-input:focus {
             box-shadow: inset 0 0 0 2px rgba(0, 102, 255, 0.6);
-            background: rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.12);
           }
 
           .search-input:disabled {
@@ -344,7 +368,31 @@ export default function Downloader() {
           }
 
           .search-input::placeholder {
-            color: rgba(255,255,255,0.65);
+            color: rgba(255,255,255,0.6);
+          }
+
+          .clear-btn {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            line-height: 1;
+            transition: all 0.2s ease;
+          }
+
+          .clear-btn:hover {
+            background: rgba(255,255,255,0.3);
           }
 
           .search-btn {
@@ -374,9 +422,10 @@ export default function Downloader() {
           }
 
           .search-btn:disabled {
-            opacity: 0.7;
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
+            background: #666;
           }
 
           .spinner {
@@ -407,38 +456,45 @@ export default function Downloader() {
           .status {
             color: #fff;
             background: rgba(0,0,0,0.4);
-            padding: 1rem 1.5rem;
+            padding: 1.5rem;
             border-radius: 12px;
             text-align: center;
             margin-bottom: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.1);
+          }
+
+          .status.loading {
+            background: rgba(0, 102, 255, 0.15);
+            border-color: rgba(0, 102, 255, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
-            flex-wrap: wrap;
-          }
-
-          .status.loading {
-            background: rgba(0, 102, 255, 0.2);
-            border: 1px solid rgba(0, 102, 255, 0.3);
           }
 
           .status.error {
-            background: rgba(220, 53, 69, 0.2);
-            border: 1px solid rgba(220, 53, 69, 0.3);
-            flex-direction: column;
-            gap: 1rem;
+            background: rgba(220, 53, 69, 0.15);
+            border-color: rgba(220, 53, 69, 0.3);
           }
 
           .status.info {
-            background: rgba(255, 193, 7, 0.2);
-            border: 1px solid rgba(255, 193, 7, 0.3);
+            background: rgba(255, 193, 7, 0.15);
+            border-color: rgba(255, 193, 7, 0.3);
           }
 
-          .retry-btn {
-            padding: 0.5rem 1rem;
+          .error-content,
+          .info-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+          }
+
+          .retry-btn,
+          .new-search-btn {
+            padding: 0.6rem 1.2rem;
             background: rgba(255, 255, 255, 0.9);
-            color: #dc3545;
+            color: #333;
             border: none;
             border-radius: 6px;
             font-weight: 600;
@@ -446,24 +502,30 @@ export default function Downloader() {
             transition: all 0.2s ease;
           }
 
-          .retry-btn:hover {
+          .retry-btn:hover,
+          .new-search-btn:hover {
             background: #fff;
             transform: translateY(-1px);
           }
 
-          .results-info {
+          .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 0 0.5rem;
+          }
+
+          .results-title {
             color: #fff;
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 0.75rem;
-            border-radius: 8px;
+            font-size: 1.3rem;
+            margin: 0;
+            font-weight: 600;
           }
 
           .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1.5rem;
           }
 
@@ -486,8 +548,9 @@ export default function Downloader() {
           .thumb-container {
             position: relative;
             width: 100%;
-            height: 160px;
+            height: 170px;
             overflow: hidden;
+            background: #f0f0f0;
           }
 
           .thumb {
@@ -514,7 +577,7 @@ export default function Downloader() {
           }
 
           .card-content {
-            padding: 1rem;
+            padding: 1.25rem;
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
@@ -522,7 +585,7 @@ export default function Downloader() {
           }
 
           .video-title {
-            font-size: 1rem;
+            font-size: 1.05rem;
             margin: 0;
             line-height: 1.3;
             font-weight: 600;
@@ -538,79 +601,67 @@ export default function Downloader() {
             gap: 0.5rem;
           }
 
+          .channel-icon {
+            font-size: 0.9rem;
+          }
+
           .channel-name {
             color: #555;
             font-size: 0.9rem;
             font-weight: 500;
           }
 
-          .meta {
+          .meta-info {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            flex-wrap: wrap;
-          }
-
-          .views {
             color: #666;
             font-size: 0.85rem;
+          }
+
+          .separator {
+            opacity: 0.6;
           }
 
           .actions {
             margin-top: auto;
             display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 0.75rem;
           }
 
-          .btn {
-            display: inline-flex;
+          .watch-btn {
+            display: flex;
             align-items: center;
             justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: #ff0000;
+            color: white;
             text-decoration: none;
-            padding: 0.5rem 0.75rem;
             border-radius: 8px;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             transition: all 0.2s ease;
-            flex: 1;
-            min-width: 60px;
           }
 
-          .mp3-btn {
-            background: #28a745;
-            color: #fff;
-          }
-
-          .mp3-btn:hover {
-            background: #218838;
+          .watch-btn:hover {
+            background: #cc0000;
             transform: translateY(-1px);
           }
 
-          .mp4-btn {
-            background: #dc3545;
-            color: #fff;
+          .btn-icon {
+            font-size: 0.8rem;
           }
 
-          .mp4-btn:hover {
-            background: #c82333;
-            transform: translateY(-1px);
-          }
-
-          .watch-link {
-            margin-left: auto;
-            color: #0b74ff;
-            text-decoration: none;
-            font-weight: 600;
+          .coming-soon {
+            text-align: center;
+            color: #666;
+            font-size: 0.8rem;
+            font-style: italic;
             padding: 0.5rem;
+            background: #f8f9fa;
             border-radius: 6px;
-            transition: all 0.2s ease;
-          }
-
-          .watch-link:hover {
-            background: rgba(11, 116, 255, 0.1);
-            transform: translateY(-1px);
           }
 
           .raw {
@@ -627,6 +678,7 @@ export default function Downloader() {
             padding: 0.5rem;
             border-radius: 6px;
             background: #f8f9fa;
+            transition: background 0.2s ease;
           }
 
           summary:hover {
@@ -643,6 +695,7 @@ export default function Downloader() {
             background: #f8f9fa;
             border-radius: 8px;
             font-size: 0.85rem;
+            border: 1px solid #e9ecef;
           }
 
           @media (max-width: 768px) {
@@ -658,7 +711,7 @@ export default function Downloader() {
               flex-direction: column;
             }
 
-            .search-input {
+            .input-container {
               flex: none;
               width: 100%;
             }
@@ -667,13 +720,19 @@ export default function Downloader() {
               width: 100%;
             }
 
+            .results-header {
+              flex-direction: column;
+              gap: 1rem;
+              align-items: flex-start;
+            }
+
             .grid {
-              grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+              grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
               gap: 1rem;
             }
 
             .thumb-container {
-              height: 140px;
+              height: 160px;
             }
           }
 
@@ -682,13 +741,8 @@ export default function Downloader() {
               grid-template-columns: 1fr;
             }
             
-            .actions {
-              flex-direction: column;
-            }
-            
-            .watch-link {
-              margin-left: 0;
-              text-align: center;
+            .card-content {
+              padding: 1rem;
             }
           }
         `}</style>
