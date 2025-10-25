@@ -1,12 +1,13 @@
+// pages/downloader.js
 "use client"
 
-import Layout from "../../components/Layout"
-import AnimatedBackground from "../../components/AnimatedBackground"
+import Layout from "../components/Layout"
+import AnimatedBackground from "../components/AnimatedBackground"
 import { useState, useRef } from "react"
 
 export default function Downloader() {
   const [query, setQuery] = useState("")
-  const [results, setResults] = useState(null) // null = not searched yet
+  const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [searched, setSearched] = useState(false)
@@ -28,12 +29,8 @@ export default function Downloader() {
     setRawResponse(null)
 
     try {
-      const url = `https://casper-tech-apis.vercel.app/api/play/youtube2?query=${encodeURIComponent(
-        q
-      )}`
-      const res = await fetch(url)
+      const res = await fetch(`/api/youtube?query=${encodeURIComponent(q)}`)
       const text = await res.text()
-      // Try parsing JSON; preserve raw response for debugging
       let data = null
       try {
         data = JSON.parse(text)
@@ -47,7 +44,7 @@ export default function Downloader() {
       setRawResponse(data)
 
       if (!res.ok) {
-        setError(`API error: ${res.status} ${res.statusText}`)
+        setError(`API error: ${res.status} ${res.statusText || ""}`)
         setResults([])
         setLoading(false)
         return
@@ -55,16 +52,14 @@ export default function Downloader() {
 
       if (data && data.success && Array.isArray(data.videos)) {
         setResults(data.videos)
-        if (data.videos.length === 0) {
-          setError("No videos returned by the API for that query.")
-        }
+        if (data.videos.length === 0) setError("No videos returned by the API for that query.")
       } else {
         setResults([])
-        setError("No results found or API returned unexpected shape.")
+        setError("Unexpected API response shape or no results.")
       }
     } catch (err) {
       console.error(err)
-      setError("Network error or CORS blocking the request.")
+      setError("Network error.")
       setResults([])
     } finally {
       setLoading(false)
@@ -132,39 +127,18 @@ export default function Downloader() {
 
                     <div className="actions">
                       {v.downloads?.mp3 ? (
-                        <a
-                          className="btn"
-                          href={v.downloads.mp3}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          🎵 MP3
-                        </a>
+                        <a className="btn" href={v.downloads.mp3} target="_blank" rel="noopener noreferrer">🎵 MP3</a>
                       ) : (
                         <span className="no">MP3 N/A</span>
                       )}
 
                       {v.downloads?.mp4 ? (
-                        <a
-                          className="btn"
-                          href={v.downloads.mp4}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          🎥 MP4
-                        </a>
+                        <a className="btn" href={v.downloads.mp4} target="_blank" rel="noopener noreferrer">🎥 MP4</a>
                       ) : (
                         <span className="no">MP4 N/A</span>
                       )}
 
-                      <a
-                        className="link"
-                        href={v.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        ▶ Watch
-                      </a>
+                      <a className="link" href={v.url} target="_blank" rel="noopener noreferrer">▶ Watch</a>
                     </div>
                   </article>
                 ))}
@@ -175,7 +149,6 @@ export default function Downloader() {
               <div className="status">No downloadable videos found for that query.</div>
             )}
 
-            {/* Raw API output for debugging when there are issues */}
             {!loading && rawResponse && (
               <details className="raw">
                 <summary>Show raw API response (debug)</summary>
@@ -186,7 +159,6 @@ export default function Downloader() {
         </main>
 
         <style jsx>{`
-          /* Page wrapper keeps animated background only */
           .page-wrapper {
             min-height: 100vh;
             display: flex;
@@ -197,7 +169,6 @@ export default function Downloader() {
             box-sizing: border-box;
           }
 
-          /* When searched, push content down and pin search to top */
           .page-wrapper.scrolled {
             align-items: stretch;
             justify-content: flex-start;
@@ -205,7 +176,6 @@ export default function Downloader() {
             padding-bottom: 6rem;
           }
 
-          /* Search block: centered like Google initially */
           .search-block {
             width: 100%;
             max-width: 900px;
@@ -227,7 +197,6 @@ export default function Downloader() {
             transition: all 300ms ease;
           }
 
-          /* Smaller, pinned style when page has been searched */
           .page-wrapper.scrolled .search-inner {
             position: sticky;
             top: 18px;
@@ -419,14 +388,9 @@ export default function Downloader() {
             margin: 0;
           }
 
-          /* Responsive tweaks */
           @media (max-width: 640px) {
-            .search-input {
-              flex-basis: 1;
-            }
-            .thumb {
-              height: 130px;
-            }
+            .search-input { flex-basis: 1; }
+            .thumb { height: 130px; }
           }
         `}</style>
       </Layout>
