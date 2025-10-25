@@ -1,8 +1,8 @@
 // pages/downloader.js
 "use client"
 
-import Layout from "../components/Layout"
-import AnimatedBackground from "../components/AnimatedBackground"
+import Layout from "../../components/Layout"
+import AnimatedBackground from "../../components/AnimatedBackground"
 import { useState, useRef } from "react"
 
 export default function Downloader() {
