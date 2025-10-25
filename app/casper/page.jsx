@@ -29,42 +29,8 @@ export default function Downloader() {
     setRawResponse(null)
 
     try {
-      const apiUrl = `https://casper-tech-apis.vercel.app/api/search/youtube`
-      console.log("Searching for:", q)
-      
-      // Try POST method first, fallback to GET if needed
-      let res
-      try {
-        // Try POST request
-        res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query: q })
-        })
-      } catch (postError) {
-        console.log("POST failed, trying GET:", postError)
-        // Fallback to GET
-        res = await fetch(`${apiUrl}?query=${encodeURIComponent(q)}`)
-      }
-
-      console.log("Response status:", res.status)
-      
-      if (!res.ok) {
-        throw new Error(`API returned ${res.status}: ${res.statusText || "Unknown error"}`)
-      }
-      
-      const text = await res.text()
-      console.log("Raw response:", text.substring(0, 200) + "...")
-      
-      let data
-      try {
-        data = JSON.parse(text)
-      } catch (parseError) {
-        console.error("JSON parse error:", parseError)
-        throw new Error("Invalid response format from server")
-      }
+      // Try multiple approaches
+      let data = await tryApiApproaches(q)
       
       setRawResponse(data)
 
@@ -78,20 +44,69 @@ export default function Downloader() {
       }
     } catch (err) {
       console.error("Search error:", err)
-      
-      // More specific error messages
-      if (err.message.includes('Failed to fetch')) {
-        setError("Network error: Cannot connect to search service. Check your internet connection or try again later.")
-      } else if (err.message.includes('CORS')) {
-        setError("Browser security restriction. Please try refreshing the page.")
-      } else {
-        setError(err.message || "Search failed. Please try again.")
-      }
-      
+      setError(err.message || "Search failed. Please try again later.")
       setResults([])
     } finally {
       setLoading(false)
     }
+  }
+
+  async function tryApiApproaches(query) {
+    const apiUrl = 'https://casper-tech-apis.vercel.app/api/search/youtube'
+    
+    // Approach 1: GET request
+    try {
+      console.log("Trying GET request...")
+      const getRes = await fetch(`${apiUrl}?query=${encodeURIComponent(query)}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        }
+      })
+      
+      if (getRes.ok) {
+        const data = await getRes.json()
+        console.log("GET request successful")
+        return data
+      }
+    } catch (getError) {
+      console.log("GET request failed:", getError)
+    }
+
+    // Approach 2: POST request
+    try {
+      console.log("Trying POST request...")
+      const postRes = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ query })
+      })
+      
+      if (postRes.ok) {
+        const data = await postRes.json()
+        console.log("POST request successful")
+        return data
+      }
+    } catch (postError) {
+      console.log("POST request failed:", postError)
+    }
+
+    // Approach 3: Try with no-cors (limited)
+    try {
+      console.log("Trying no-cors request...")
+      const noCorsRes = await fetch(`${apiUrl}?query=${encodeURIComponent(query)}`, {
+        mode: 'no-cors'
+      })
+      // Note: no-cors mode gives opaque response, we can't read it
+      console.log("No-cors request sent (response not readable)")
+    } catch (noCorsError) {
+      console.log("No-cors request failed:", noCorsError)
+    }
+
+    throw new Error("All API approaches failed. The server might be down or blocked.")
   }
 
   function handleKeyDown(e) {
@@ -115,22 +130,33 @@ export default function Downloader() {
     inputRef.current?.focus()
   }
 
-  // Test API connectivity on component mount
-  async function testAPI() {
-    try {
-      const testRes = await fetch('https://casper-tech-apis.vercel.app/api/search/youtube?query=test', {
-        method: 'GET',
-        mode: 'cors',
-        headers: {
-          'Accept': 'application/json',
-        }
-      })
-      console.log("API test response:", testRes.status)
-      return testRes.ok
-    } catch (error) {
-      console.log("API test failed:", error)
-      return false
-    }
+  // Fallback mock data for testing
+  const useMockData = () => {
+    const mockVideos = [
+      {
+        title: "Alan Walker - Faded",
+        videoId: "60ItHLz5WEA",
+        url: "https://www.youtube.com/watch?v=60ItHLz5WEA",
+        thumbnail: "https://i.ytimg.com/vi/60ItHLz5WEA/hq720.jpg",
+        channel: "Alan Walker",
+        duration: "3:33",
+        views: "3.8B views"
+      },
+      {
+        title: "Alan Walker - Faded (Lyrics)",
+        videoId: "qdpXxGPqW-Y",
+        url: "https://www.youtube.com/watch?v=qdpXxGPqW-Y",
+        thumbnail: "https://i.ytimg.com/vi/qdpXxGPqW-Y/hq720.jpg",
+        channel: "7clouds",
+        duration: "3:33",
+        views: "285M views"
+      }
+    ]
+    
+    setResults(mockVideos)
+    setRawResponse({ success: true, videos: mockVideos, mock: true })
+    setError("")
+    setLoading(false)
   }
 
   return (
@@ -143,9 +169,15 @@ export default function Downloader() {
               <div className="header-content">
                 <h1 className="title">YouTube Search</h1>
                 <p className="subtitle">Search and discover YouTube videos</p>
-                <div className="api-status">
-                  <span className="status-dot"></span>
-                  Casper Tech API
+                <div className="api-actions">
+                  <button 
+                    type="button" 
+                    className="mock-btn"
+                    onClick={useMockData}
+                    title="Use sample data for testing"
+                  >
+                    Use Sample Data
+                  </button>
                 </div>
               </div>
 
@@ -190,7 +222,7 @@ export default function Downloader() {
               </div>
 
               <div className="hint">
-                Press Enter to search • Uses POST/GET methods automatically
+                Press Enter to search • Multiple fallback methods used
               </div>
             </div>
           </form>
@@ -200,6 +232,7 @@ export default function Downloader() {
               <div className="status loading">
                 <div className="spinner"></div>
                 <span>Searching YouTube for "{query}"...</span>
+                <div className="loading-details">Trying different connection methods...</div>
               </div>
             )}
 
@@ -207,9 +240,12 @@ export default function Downloader() {
               <div className="status error">
                 <div className="error-content">
                   <div className="error-icon">⚠️</div>
-                  <div>
+                  <div className="error-text">
                     <strong>Search Failed</strong>
                     <p>{error}</p>
+                    <p className="error-help">
+                      This might be due to network restrictions or the API service being temporarily unavailable.
+                    </p>
                   </div>
                   <div className="error-actions">
                     <button className="retry-btn" onClick={handleRetry}>
@@ -228,6 +264,7 @@ export default function Downloader() {
                 <div className="results-header">
                   <h2 className="results-title">
                     Found {results.length} video{results.length !== 1 ? 's' : ''} for "{query}"
+                    {rawResponse?.mock && <span className="mock-badge">Sample Data</span>}
                   </h2>
                   <button className="new-search-btn" onClick={clearSearch}>
                     New Search
@@ -289,27 +326,13 @@ export default function Downloader() {
               </>
             )}
 
-            {results && results.length === 0 && !loading && !error && (
-              <div className="status info">
-                <div className="info-content">
-                  <div className="info-icon">ℹ️</div>
-                  <div>
-                    <strong>No videos found</strong>
-                    <p>No results found for "{query}". Try different keywords.</p>
-                  </div>
-                  <button className="retry-btn" onClick={clearSearch}>
-                    New Search
-                  </button>
-                </div>
-              </div>
-            )}
-
             {!loading && rawResponse && (
               <details className="raw">
-                <summary>Debug: Show API Response</summary>
+                <summary>Debug: Show API Response Details</summary>
                 <div className="debug-info">
                   <div className="debug-section">
-                    <strong>Request Method:</strong> POST (with GET fallback)
+                    <strong>API Status:</strong> {rawResponse.success ? 'Success' : 'Failed'}
+                    {rawResponse.mock && ' (Using Sample Data)'}
                   </div>
                   <pre>{JSON.stringify(rawResponse, null, 2)}</pre>
                 </div>
@@ -385,43 +408,23 @@ export default function Downloader() {
             font-size: 0.95rem;
           }
 
-          .api-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.25rem 0.75rem;
+          .api-actions {
+            margin-top: 0.5rem;
+          }
+
+          .mock-btn {
+            padding: 0.4rem 0.8rem;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
             font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.2s ease;
           }
 
-          .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #00ff00;
-            animation: pulse 2s infinite;
-          }
-
-          @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-          }
-
-          .page-wrapper.scrolled .header-content {
-            margin-bottom: 1rem;
-          }
-
-          .page-wrapper.scrolled .title {
-            font-size: 1.3rem;
-            margin-bottom: 0.25rem;
-          }
-
-          .page-wrapper.scrolled .subtitle {
-            font-size: 0.9rem;
-            margin: 0;
+          .mock-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
           }
 
           .search-row {
@@ -566,9 +569,14 @@ export default function Downloader() {
             background: rgba(0, 102, 255, 0.15);
             border-color: rgba(0, 102, 255, 0.3);
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
             gap: 0.75rem;
+          }
+
+          .loading-details {
+            font-size: 0.9rem;
+            opacity: 0.8;
           }
 
           .status.error {
@@ -576,13 +584,7 @@ export default function Downloader() {
             border-color: rgba(220, 53, 69, 0.3);
           }
 
-          .status.info {
-            background: rgba(255, 193, 7, 0.15);
-            border-color: rgba(255, 193, 7, 0.3);
-          }
-
-          .error-content,
-          .info-content {
+          .error-content {
             display: flex;
             flex-direction: column;
             gap: 1rem;
@@ -590,9 +592,20 @@ export default function Downloader() {
             text-align: center;
           }
 
-          .error-icon,
-          .info-icon {
+          .error-icon {
             font-size: 2rem;
+          }
+
+          .error-text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+
+          .error-help {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            max-width: 400px;
           }
 
           .error-actions {
@@ -648,6 +661,18 @@ export default function Downloader() {
             color: #fff;
             font-size: 1.3rem;
             margin: 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+          }
+
+          .mock-badge {
+            background: #ffc107;
+            color: #000;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
             font-weight: 600;
           }
 
