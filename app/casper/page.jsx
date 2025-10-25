@@ -29,7 +29,6 @@ export default function Downloader() {
     setRawResponse(null)
 
     try {
-      // Try multiple approaches
       let data = await tryApiApproaches(q)
       
       setRawResponse(data)
@@ -52,61 +51,75 @@ export default function Downloader() {
   }
 
   async function tryApiApproaches(query) {
-    const apiUrl = 'https://casper-tech-apis.vercel.app/api/search/youtube'
-    
-    // Approach 1: GET request
+    // Approach 1: Try your Next.js API proxy first (if it exists)
     try {
-      console.log("Trying GET request...")
-      const getRes = await fetch(`${apiUrl}?query=${encodeURIComponent(query)}`, {
+      console.log("Trying Next.js API proxy...");
+      const proxyRes = await fetch(`../app/api/youtube-search?query=${encodeURIComponent(query)}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
         }
-      })
+      });
       
-      if (getRes.ok) {
-        const data = await getRes.json()
-        console.log("GET request successful")
-        return data
+      if (proxyRes.ok) {
+        const data = await proxyRes.json();
+        console.log("Proxy request successful");
+        return data;
       }
-    } catch (getError) {
-      console.log("GET request failed:", getError)
+    } catch (proxyError) {
+      console.log("Proxy request failed (may not be set up):", proxyError);
     }
 
-    // Approach 2: POST request
+    // Approach 2: Try public CORS proxies
+    const corsProxies = [
+      'https://api.allorigins.win/raw?url=',
+      'https://corsproxy.io/?',
+    ];
+    
+    const apiUrl = `https://casper-tech-apis.vercel.app/api/search/youtube?query=${encodeURIComponent(query)}`;
+    
+    for (const proxy of corsProxies) {
+      try {
+        console.log(`Trying CORS proxy: ${proxy.slice(0, 30)}...`);
+        const fullUrl = `${proxy}${encodeURIComponent(apiUrl)}`;
+        
+        const response = await fetch(fullUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("CORS proxy request successful");
+          return data;
+        }
+      } catch (error) {
+        console.log(`CORS proxy failed:`, error);
+      }
+    }
+
+    // Approach 3: Try direct API call (may fail due to CORS)
     try {
-      console.log("Trying POST request...")
-      const postRes = await fetch(apiUrl, {
-        method: 'POST',
+      console.log("Trying direct API call...");
+      const directRes = await fetch(apiUrl, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
-        },
-        body: JSON.stringify({ query })
-      })
+        }
+      });
       
-      if (postRes.ok) {
-        const data = await postRes.json()
-        console.log("POST request successful")
-        return data
+      if (directRes.ok) {
+        const data = await directRes.json();
+        console.log("Direct API request successful");
+        return data;
       }
-    } catch (postError) {
-      console.log("POST request failed:", postError)
+    } catch (directError) {
+      console.log("Direct API request failed:", directError);
     }
 
-    // Approach 3: Try with no-cors (limited)
-    try {
-      console.log("Trying no-cors request...")
-      const noCorsRes = await fetch(`${apiUrl}?query=${encodeURIComponent(query)}`, {
-        mode: 'no-cors'
-      })
-      // Note: no-cors mode gives opaque response, we can't read it
-      console.log("No-cors request sent (response not readable)")
-    } catch (noCorsError) {
-      console.log("No-cors request failed:", noCorsError)
-    }
-
-    throw new Error("All API approaches failed. The server might be down or blocked.")
+    throw new Error("Unable to connect to the API. Please try again or use the sample data.");
   }
 
   function handleKeyDown(e) {
@@ -140,7 +153,7 @@ export default function Downloader() {
         thumbnail: "https://i.ytimg.com/vi/60ItHLz5WEA/hq720.jpg",
         channel: "Alan Walker",
         duration: "3:33",
-        views: "3.8B views"
+        views: "3,879,495,729 views"
       },
       {
         title: "Alan Walker - Faded (Lyrics)",
@@ -149,10 +162,39 @@ export default function Downloader() {
         thumbnail: "https://i.ytimg.com/vi/qdpXxGPqW-Y/hq720.jpg",
         channel: "7clouds",
         duration: "3:33",
-        views: "285M views"
+        views: "285,803,941 views"
+      },
+      {
+        title: "Alan Walker - Faded (Live Performance)",
+        videoId: "mIxlvVlOIS0",
+        url: "https://www.youtube.com/watch?v=mIxlvVlOIS0",
+        thumbnail: "https://i.ytimg.com/vi/mIxlvVlOIS0/hqdefault.jpg",
+        channel: "Alan Walker",
+        duration: "5:40",
+        views: "478,535,541 views"
+      },
+      {
+        title: "ZHU - Faded (Official Music Video)",
+        videoId: "CVvJp3d8xGQ",
+        url: "https://www.youtube.com/watch?v=CVvJp3d8xGQ",
+        thumbnail: "https://i.ytimg.com/vi/CVvJp3d8xGQ/hqdefault.jpg",
+        channel: "Spinnin' Records",
+        duration: "4:14",
+        views: "218,791,685 views"
+      },
+      {
+        title: "Alan Walker - Faded (Lyrics)",
+        videoId: "NKfXFqOvKbY",
+        url: "https://www.youtube.com/watch?v=NKfXFqOvKbY",
+        thumbnail: "https://i.ytimg.com/vi/NKfXFqOvKbY/hq720.jpg",
+        channel: "7clouds Dance",
+        duration: "3:33",
+        views: "5,851,985 views"
       }
     ]
     
+    setQuery("faded")
+    setSearched(true)
     setResults(mockVideos)
     setRawResponse({ success: true, videos: mockVideos, mock: true })
     setError("")
@@ -245,6 +287,7 @@ export default function Downloader() {
                     <p>{error}</p>
                     <p className="error-help">
                       This might be due to network restrictions or the API service being temporarily unavailable.
+                      Try using the sample data button above to see how the interface works.
                     </p>
                   </div>
                   <div className="error-actions">
@@ -253,6 +296,9 @@ export default function Downloader() {
                     </button>
                     <button className="secondary-btn" onClick={clearSearch}>
                       New Search
+                    </button>
+                    <button className="secondary-btn" onClick={useMockData}>
+                      Use Sample Data
                     </button>
                   </div>
                 </div>
@@ -334,6 +380,12 @@ export default function Downloader() {
                     <strong>API Status:</strong> {rawResponse.success ? 'Success' : 'Failed'}
                     {rawResponse.mock && ' (Using Sample Data)'}
                   </div>
+                  {rawResponse.provider && (
+                    <div className="debug-section">
+                      <strong>Provider:</strong> {rawResponse.provider}
+                      {rawResponse.creator && ` by ${rawResponse.creator}`}
+                    </div>
+                  )}
                   <pre>{JSON.stringify(rawResponse, null, 2)}</pre>
                 </div>
               </details>
@@ -605,7 +657,7 @@ export default function Downloader() {
           .error-help {
             font-size: 0.9rem;
             opacity: 0.8;
-            max-width: 400px;
+            max-width: 500px;
           }
 
           .error-actions {
