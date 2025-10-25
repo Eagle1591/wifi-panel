@@ -29,16 +29,43 @@ export default function Downloader() {
     setRawResponse(null)
 
     try {
-      const apiUrl = `https://casper-tech-apis.vercel.app/api/search/youtube?query=${encodeURIComponent(q)}`
-      console.log("Fetching from:", apiUrl)
+      const apiUrl = `https://casper-tech-apis.vercel.app/api/search/youtube`
+      console.log("Searching for:", q)
       
-      const res = await fetch(apiUrl)
+      // Try POST method first, fallback to GET if needed
+      let res
+      try {
+        // Try POST request
+        res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query: q })
+        })
+      } catch (postError) {
+        console.log("POST failed, trying GET:", postError)
+        // Fallback to GET
+        res = await fetch(`${apiUrl}?query=${encodeURIComponent(q)}`)
+      }
+
+      console.log("Response status:", res.status)
       
       if (!res.ok) {
-        throw new Error(`API error: ${res.status} ${res.statusText || ""}`)
+        throw new Error(`API returned ${res.status}: ${res.statusText || "Unknown error"}`)
       }
       
-      const data = await res.json()
+      const text = await res.text()
+      console.log("Raw response:", text.substring(0, 200) + "...")
+      
+      let data
+      try {
+        data = JSON.parse(text)
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError)
+        throw new Error("Invalid response format from server")
+      }
+      
       setRawResponse(data)
 
       if (data && data.success && Array.isArray(data.videos)) {
@@ -51,7 +78,16 @@ export default function Downloader() {
       }
     } catch (err) {
       console.error("Search error:", err)
-      setError(err.message || "Failed to search videos. Please try again.")
+      
+      // More specific error messages
+      if (err.message.includes('Failed to fetch')) {
+        setError("Network error: Cannot connect to search service. Check your internet connection or try again later.")
+      } else if (err.message.includes('CORS')) {
+        setError("Browser security restriction. Please try refreshing the page.")
+      } else {
+        setError(err.message || "Search failed. Please try again.")
+      }
+      
       setResults([])
     } finally {
       setLoading(false)
@@ -79,6 +115,24 @@ export default function Downloader() {
     inputRef.current?.focus()
   }
 
+  // Test API connectivity on component mount
+  async function testAPI() {
+    try {
+      const testRes = await fetch('https://casper-tech-apis.vercel.app/api/search/youtube?query=test', {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Accept': 'application/json',
+        }
+      })
+      console.log("API test response:", testRes.status)
+      return testRes.ok
+    } catch (error) {
+      console.log("API test failed:", error)
+      return false
+    }
+  }
+
   return (
     <>
       <AnimatedBackground />
@@ -89,6 +143,10 @@ export default function Downloader() {
               <div className="header-content">
                 <h1 className="title">YouTube Search</h1>
                 <p className="subtitle">Search and discover YouTube videos</p>
+                <div className="api-status">
+                  <span className="status-dot"></span>
+                  Casper Tech API
+                </div>
               </div>
 
               <div className="search-row">
@@ -132,7 +190,7 @@ export default function Downloader() {
               </div>
 
               <div className="hint">
-                Press Enter to search • Powered by Casper Tech API
+                Press Enter to search • Uses POST/GET methods automatically
               </div>
             </div>
           </form>
@@ -148,11 +206,19 @@ export default function Downloader() {
             {error && !loading && (
               <div className="status error">
                 <div className="error-content">
-                  <strong>Search Failed</strong>
-                  <p>{error}</p>
-                  <button className="retry-btn" onClick={handleRetry}>
-                    Try Again
-                  </button>
+                  <div className="error-icon">⚠️</div>
+                  <div>
+                    <strong>Search Failed</strong>
+                    <p>{error}</p>
+                  </div>
+                  <div className="error-actions">
+                    <button className="retry-btn" onClick={handleRetry}>
+                      Try Again
+                    </button>
+                    <button className="secondary-btn" onClick={clearSearch}>
+                      New Search
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -170,7 +236,7 @@ export default function Downloader() {
                 
                 <div className="grid">
                   {results.map((video, index) => (
-                    <article className="card" key={video.videoId ?? index}>
+                    <article className="card" key={video.videoId ?? `video-${index}`}>
                       <div className="thumb-container">
                         <img 
                           className="thumb" 
@@ -226,8 +292,11 @@ export default function Downloader() {
             {results && results.length === 0 && !loading && !error && (
               <div className="status info">
                 <div className="info-content">
-                  <strong>No videos found</strong>
-                  <p>No results found for "{query}". Try different keywords.</p>
+                  <div className="info-icon">ℹ️</div>
+                  <div>
+                    <strong>No videos found</strong>
+                    <p>No results found for "{query}". Try different keywords.</p>
+                  </div>
                   <button className="retry-btn" onClick={clearSearch}>
                     New Search
                   </button>
@@ -238,7 +307,12 @@ export default function Downloader() {
             {!loading && rawResponse && (
               <details className="raw">
                 <summary>Debug: Show API Response</summary>
-                <pre>{JSON.stringify(rawResponse, null, 2)}</pre>
+                <div className="debug-info">
+                  <div className="debug-section">
+                    <strong>Request Method:</strong> POST (with GET fallback)
+                  </div>
+                  <pre>{JSON.stringify(rawResponse, null, 2)}</pre>
+                </div>
               </details>
             )}
           </section>
@@ -306,9 +380,34 @@ export default function Downloader() {
           }
 
           .subtitle {
-            margin: 0 0 1rem 0;
+            margin: 0 0 0.5rem 0;
             color: #e6e6e6;
             font-size: 0.95rem;
+          }
+
+          .api-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.8);
+          }
+
+          .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff00;
+            animation: pulse 2s infinite;
+          }
+
+          @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
           }
 
           .page-wrapper.scrolled .header-content {
@@ -488,6 +587,19 @@ export default function Downloader() {
             flex-direction: column;
             gap: 1rem;
             align-items: center;
+            text-align: center;
+          }
+
+          .error-icon,
+          .info-icon {
+            font-size: 2rem;
+          }
+
+          .error-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
           }
 
           .retry-btn,
@@ -502,9 +614,25 @@ export default function Downloader() {
             transition: all 0.2s ease;
           }
 
+          .secondary-btn {
+            padding: 0.6rem 1.2rem;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+
           .retry-btn:hover,
           .new-search-btn:hover {
             background: #fff;
+            transform: translateY(-1px);
+          }
+
+          .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
             transform: translateY(-1px);
           }
 
@@ -672,6 +800,20 @@ export default function Downloader() {
             color: #111;
           }
 
+          .debug-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+
+          .debug-section {
+            padding: 0.5rem;
+            background: #e9ecef;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+          }
+
           summary {
             cursor: pointer;
             font-weight: 600;
@@ -733,6 +875,16 @@ export default function Downloader() {
 
             .thumb-container {
               height: 160px;
+            }
+
+            .error-actions {
+              flex-direction: column;
+              width: 100%;
+            }
+
+            .retry-btn,
+            .secondary-btn {
+              width: 100%;
             }
           }
 
