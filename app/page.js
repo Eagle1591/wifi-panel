@@ -1,6 +1,6 @@
 // ./app/page.js
 "use client";
-Layout from '../components/Layout'
+import Layout from '../components/Layout'
 import AnimatedBackground from '../components/AnimatedBackground'
 
 const plans = [
