@@ -3,14 +3,14 @@ import Layout from '../components/Layout'
 import AnimatedBackground from '../components/AnimatedBackground'
 
 const wifiPlans = [
-  { label: '1 Hour', price: 'Ksh 10', duration: '1hr', mbs: '20MB' },
-  { label: '2 Hours', price: 'Ksh 15', duration: '2hrs', mbs: '20MB' },
-  { label: '4 Hours', price: 'Ksh 20', duration: '4hrs', mbs: '20MB' },
-  { label: '6 Hours', price: 'Ksh 40', duration: '6hrs', mbs: '20MB' },
-  { label: '12 Hours', price: 'Ksh 55', duration: '12hrs', mbs: '20MB' },
-  { label: '1 Day', price: 'Ksh 70', duration: '24hrs', mbs: '20MB' },
-  { label: '3 Days', price: 'Ksh 130', duration: '72hrs', mbs: '20MB' },
-  { label: '1 Week', price: 'Ksh 190', duration: '168hrs', mbs: '20MB' },
+  { label: '1 Hour', price: 'Ksh 10', duration: '1hr', mbs: '20 MBPS' },
+  { label: '2 Hours', price: 'Ksh 15', duration: '2hrs', mbs: '20 MBPS' },
+  { label: '4 Hours', price: 'Ksh 20', duration: '4hrs', mbs: '20 MBPS' },
+  { label: '6 Hours', price: 'Ksh 40', duration: '6hrs', mbs: '20 MBPS' },
+  { label: '12 Hours', price: 'Ksh 55', duration: '12hrs', mbs: '20 MBPS' },
+  { label: '1 Day', price: 'Ksh 70', duration: '24hrs', mbs: '20 MBPS' },
+  { label: '3 Days', price: 'Ksh 130', duration: '72hrs', mbs: '20 MBPS' },
+  { label: '1 Week', price: 'Ksh 190', duration: '168hrs', mbs: '20 MBPS' },
 ]
 
 export default function WifiBillingPanel() {
