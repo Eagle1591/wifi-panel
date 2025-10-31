@@ -8,7 +8,14 @@ export default function About() {
       <Layout>
         <div className="page-content about-page">
           <h1>Welcome to WiFiPanel</h1>
-          <p className="intro">
+          <p>
             WiFiPanel is your all-in-one solution for secure, fast, and beautifully designed internet access.
             Whether you're managing a hotspot, selling vouchers, or offering premium access — we make it effortless.
           </p>
+
+          {/* rest of your content */}
+        </div>
+      </Layout>
+    </>
+  )
+}
