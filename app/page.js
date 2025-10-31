@@ -97,7 +97,7 @@ export default function WifiBillingPanel() {
 
         .btn-primary {
           background: #0070f3;
-          color: white;
+          color: yellow;
           border: none;
           padding: 0.5rem 1rem;
           border-radius: 4px;
@@ -126,7 +126,7 @@ export default function WifiBillingPanel() {
 
         .btn-secondary {
           background: #555;
-          color: white;
+          color: green;
           border: none;
           padding: 0.5rem 1rem;
           border-radius: 4px;
