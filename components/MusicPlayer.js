@@ -1,3 +1,4 @@
+// components/MusicPlayer.js
 'use client'
 import { useState, useRef, useEffect } from 'react'
 
@@ -8,8 +9,7 @@ export default function MusicPlayer() {
   const [duration, setDuration] = useState('0:00')
   const audioRef = useRef(null)
 
-  // Sample audio URL - replace with your actual audio file
-  const audioUrl = '/audio/sample-song.mp3'
+  const audioUrl = '/audio/my-track.mp3' // Replace with your actual file
 
   const togglePlay = () => {
     if (!audioRef.current) return
@@ -17,9 +17,7 @@ export default function MusicPlayer() {
     if (isPlaying) {
       audioRef.current.pause()
     } else {
-      audioRef.current.play().catch(error => {
-        console.log('Audio play failed:', error)
-      })
+      audioRef.current.play().catch(error => console.log('Audio play failed:', error))
     }
     setIsPlaying(!isPlaying)
   }
@@ -42,9 +40,7 @@ export default function MusicPlayer() {
 
   const handleLoadedMetadata = () => {
     const audio = audioRef.current
-    if (audio) {
-      setDuration(formatTime(audio.duration))
-    }
+    if (audio) setDuration(formatTime(audio.duration))
   }
 
   const handleSeek = (e) => {
@@ -73,32 +69,87 @@ export default function MusicPlayer() {
 
   return (
     <div className="music-player">
-      <audio
-        ref={audioRef}
-        src={audioUrl}
-        preload="metadata"
-      />
-      
+      <audio ref={audioRef} src={audioUrl} preload="metadata" />
+
       <div className="player-controls">
         <button onClick={togglePlay} className="play-btn">
           {isPlaying ? '❚❚' : '▶'}
         </button>
-        
+
         <div className="progress-container">
           <span className="time-current">{currentTime}</span>
           <div className="progress-bar" onClick={handleSeek}>
-            <div 
-              className="progress" 
-              style={{ width: `${progress}%` }}
-            ></div>
+            <div className="progress" style={{ width: `${progress}%` }}></div>
           </div>
           <span className="time-duration">{duration}</span>
         </div>
       </div>
 
       <div className="now-playing">
-        <span>Now Playing: Sample Track</span>
+        <span>🎶 Now Playing: Sample Track</span>
       </div>
+
+      <style jsx>{`
+        .music-player {
+          background: #1a1a2e;
+          color: #fff;
+          padding: 1rem;
+          border-radius: 12px;
+          max-width: 400px;
+          margin: 2rem auto;
+          box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .player-controls {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .play-btn {
+          font-size: 2rem;
+          background: #00bfff;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 60px;
+          height: 60px;
+          cursor: pointer;
+        }
+
+        .progress-container {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          width: 100%;
+        }
+
+        .progress-bar {
+          flex-grow: 1;
+          height: 6px;
+          background: #444;
+          border-radius: 3px;
+          cursor: pointer;
+          position: relative;
+        }
+
+        .progress {
+          height: 100%;
+          background: #00bfff;
+          border-radius: 3px;
+        }
+
+        .time-current, .time-duration {
+          font-size: 0.8rem;
+        }
+
+        .now-playing {
+          margin-top: 1rem;
+          font-size: 0.9rem;
+          text-align: center;
+        }
+      `}</style>
     </div>
   )
 }

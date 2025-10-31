@@ -10,6 +10,7 @@ export default function AnimatedBackground() {
 
     const ctx = canvas.getContext('2d')
     let animationFrameId
+    let mouse = { x: null, y: null }
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth
@@ -21,78 +22,113 @@ export default function AnimatedBackground() {
 
     // Handle window resize
     window.addEventListener('resize', resizeCanvas)
+    window.addEventListener('mousemove', e => {
+      mouse.x = e.clientX
+      mouse.y = e.clientY
+    })
 
-    class Particle {
+    class Star {
       constructor() {
         this.x = Math.random() * canvas.width
         this.y = Math.random() * canvas.height
-        this.size = Math.random() * 2 + 1
-        this.speedX = Math.random() * 1 - 0.5
-        this.speedY = Math.random() * 1 - 0.5
-        this.color = `hsl(${Math.random() * 360}, 70%, 60%)`
-      }
-
-      update() {
-        this.x += this.speedX
-        this.y += this.speedY
-
-        // Wrap around edges
-        if (this.x > canvas.width) this.x = 0
-        else if (this.x < 0) this.x = canvas.width
-        if (this.y > canvas.height) this.y = 0
-        else if (this.y < 0) this.y = canvas.height
+        this.radius = Math.random() * 1.5
+        this.alpha = Math.random()
+        this.speed = Math.random() * 0.02
       }
 
       draw() {
-        ctx.fillStyle = this.color
+        ctx.save()
+        ctx.globalAlpha = this.alpha
+        ctx.fillStyle = '#ffffff'
         ctx.beginPath()
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2)
         ctx.fill()
+        ctx.restore()
+      }
+
+      update() {
+        this.alpha += this.speed
+        if (this.alpha > 1 || this.alpha < 0) this.speed *= -1
       }
     }
 
-    // Create particles
-    const particles = []
-    const particleCount = Math.min(80, Math.floor((canvas.width * canvas.height) / 10000))
-    
-    for (let i = 0; i < particleCount; i++) {
-      particles.push(new Particle())
+    class Comet {
+      constructor() {
+        this.reset()
+      }
+
+      reset() {
+        this.x = Math.random() * canvas.width
+        this.y = -50
+        this.length = Math.random() * 80 + 50
+        this.speed = Math.random() * 4 + 2
+        this.angle = Math.PI / 4
+        this.opacity = 1
+      }
+
+      draw() {
+        ctx.save()
+        ctx.globalAlpha = this.opacity
+        ctx.strokeStyle = '#00ffff'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(this.x, this.y)
+        ctx.lineTo(this.x - this.length * Math.cos(this.angle), this.y + this.length * Math.sin(this.angle))
+        ctx.stroke()
+        ctx.restore()
+      }
+
+      update() {
+        this.x += this.speed
+        this.y += this.speed
+        this.opacity -= 0.01
+        if (this.opacity <= 0) this.reset()
+      }
     }
 
-    // Connect particles with lines
-    const connectParticles = () => {
-      const maxDistance = 100
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x
-          const dy = particles[i].y - particles[j].y
-          const distance = Math.sqrt(dx * dx + dy * dy)
+    const stars = Array.from({ length: 150 }, () => new Star())
+    const comets = Array.from({ length: 3 }, () => new Comet())
 
-          if (distance < maxDistance) {
-            ctx.beginPath()
-            ctx.strokeStyle = `hsla(${(i * j) % 360}, 70%, 60%, ${0.2 * (1 - distance / maxDistance)})`
-            ctx.lineWidth = 0.5
-            ctx.moveTo(particles[i].x, particles[i].y)
-            ctx.lineTo(particles[j].x, particles[j].y)
-            ctx.stroke()
-          }
-        }
+    const drawMoon = () => {
+      const moonX = canvas.width - 100
+      const moonY = 100
+      ctx.save()
+      ctx.fillStyle = '#f5f3ce'
+      ctx.shadowColor = '#f5f3ce'
+      ctx.shadowBlur = 30
+      ctx.beginPath()
+      ctx.arc(moonX, moonY, 40, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+    }
+
+    const drawMouseGlow = () => {
+      if (mouse.x && mouse.y) {
+        ctx.save()
+        ctx.fillStyle = 'rgba(255,255,255,0.05)'
+        ctx.beginPath()
+        ctx.arc(mouse.x, mouse.y, 80, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
       }
     }
 
     const animate = () => {
-      // Clear with semi-transparent for trail effect
-      ctx.fillStyle = 'rgba(10, 10, 20, 0.05)'
+      ctx.fillStyle = '#0a0a1a'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-      // Update and draw particles
-      particles.forEach(particle => {
-        particle.update()
-        particle.draw()
+      drawMoon()
+      drawMouseGlow()
+
+      stars.forEach(star => {
+        star.update()
+        star.draw()
       })
 
-      // Connect particles
-      connectParticles()
+      comets.forEach(comet => {
+        comet.update()
+        comet.draw()
+      })
 
       animationFrameId = requestAnimationFrame(animate)
     }
@@ -104,12 +140,13 @@ export default function AnimatedBackground() {
     return () => {
       cancelAnimationFrame(animationFrameId)
       window.removeEventListener('resize', resizeCanvas)
+      window.removeEventListener('mousemove', () => {})
     }
   }, [])
 
   return (
-    <canvas 
-      ref={canvasRef} 
+    <canvas
+      ref={canvasRef}
       className="animated-background"
       style={{
         position: 'fixed',

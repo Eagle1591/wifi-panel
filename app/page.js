@@ -141,3 +141,15 @@ export default function WifiBillingPanel() {
     </>
   )
 }
+import Footer from '../components/Footer'
+
+
+<Footer />
+import Navigation from '../components/Navigation'
+
+
+<Navigation />
+import MusicPlayer from '../components/MusicPlayer'
+
+
+<MusicPlayer />
