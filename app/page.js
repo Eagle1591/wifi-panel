@@ -74,7 +74,7 @@ export default function WifiBillingPanel() {
         }
 
         .plan-box {
-          background: #f9f9f9;
+          background: #07a909ff;
           border-radius: 8px;
           padding: 1rem;
           box-shadow: 0 2px 6px rgba(0,0,0,0.1);
