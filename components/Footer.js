@@ -1,4 +1,5 @@
 'use client'
+import { FaFacebook, FaWhatsapp, FaTwitter, FaInstagram, FaGlobe, FaTiktok } from 'react-icons/fa'
 
 export default function Footer() {
   return (
@@ -21,10 +22,12 @@ export default function Footer() {
         <div className="footer-section">
           <h4>Connect</h4>
           <div className="social-links">
-            <a href="https://wa.me/254712345678" target="_blank" rel="noopener noreferrer">WhatsApp</a>
-            <a href="https://twitter.com/yourUsername" target="_blank" rel="noopener noreferrer">Twitter</a>
-            <a href="https://facebook.com/yourProfile" target="_blank" rel="noopener noreferrer">Facebook</a>
-            <a href="https://www.tiktok.com/@yourHandle" target="_blank" rel="noopener noreferrer">TikTok</a>
+            <a href="https://wa.me/254712345678" target="_blank" rel="noopener noreferrer"><FaWhatsapp /> WhatsApp</a>
+            <a href="https://twitter.com/yourUsername" target="_blank" rel="noopener noreferrer"><FaTwitter /> Twitter</a>
+            <a href="https://facebook.com/yourProfile" target="_blank" rel="noopener noreferrer"><FaFacebook /> Facebook</a>
+            <a href="https://www.instagram.com/yourHandle" target="_blank" rel="noopener noreferrer"><FaInstagram /> Instagram</a>
+            <a href="https://www.tiktok.com/@yourHandle" target="_blank" rel="noopener noreferrer"><FaTiktok /> TikTok</a>
+            <a href="https://yourwebsite.com" target="_blank" rel="noopener noreferrer"><FaGlobe /> Website</a>
           </div>
         </div>
       </div>
@@ -70,6 +73,9 @@ export default function Footer() {
         .footer-section a {
           color: #00bfff;
           text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
         }
 
         .footer-section a:hover {
@@ -98,6 +104,7 @@ export default function Footer() {
           .social-links {
             flex-direction: row;
             gap: 1rem;
+            flex-wrap: wrap;
           }
         }
       `}</style>

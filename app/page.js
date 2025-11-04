@@ -2,8 +2,9 @@
 import { useState } from 'react'
 import Layout from '../components/Layout'
 import AnimatedBackground from '../components/AnimatedBackground'
-import BuyNowForm from '../components/BuyNowForm'
 import BuyNowModal from '../components/BuyNowModal'
+import { FaFacebook, FaWhatsapp, FaTwitter, FaInstagram, FaGlobe } from 'react-icons/fa'
+import Footer from '../components/Footer'
 
 const wifiPlans = [
   { label: '1 Hour', price: 10, duration: '1hr', mbs: '20 MBPS' },
@@ -17,8 +18,7 @@ const wifiPlans = [
 ]
 
 export default function WifiBillingPanel() {
-  const [activePlan, setActivePlan] = useState(null)
-const [selectedPlan, setSelectedPlan] = useState(null)
+  const [selectedPlan, setSelectedPlan] = useState(null)
 
   return (
     <>
@@ -36,13 +36,9 @@ const [selectedPlan, setSelectedPlan] = useState(null)
                 <h2>{plan.label}</h2>
                 <p className="price">Ksh {plan.price}</p>
                 <p className="details">Max: {plan.mbs}</p>
-                {activePlan === index ? (
-                  <BuyNowForm amount={plan.price} label={plan.label} />
-                ) : (
-                  <button className="btn-primary" onClick={() => setActivePlan(index)}>
-                    Buy Now
-                  </button>
-                )}
+                <button className="btn-primary" onClick={() => setSelectedPlan(plan)}>
+                  Buy Now
+                </button>
               </div>
             ))}
           </section>
@@ -64,7 +60,31 @@ const [selectedPlan, setSelectedPlan] = useState(null)
               <button className="btn-primary">Redeem</button>
             </form>
           </section>
+
+          <section className="social-links">
+            <a href="https://wa.me/254712345678" target="_blank" rel="noopener noreferrer"><FaWhatsapp size={24} /></a>
+            <a href="https://facebook.com/yourpage" target="_blank" rel="noopener noreferrer"><FaFacebook size={24} /></a>
+            <a href="https://twitter.com/yourhandle" target="_blank" rel="noopener noreferrer"><FaTwitter size={24} /></a>
+            <a href="https://instagram.com/yourhandle" target="_blank" rel="noopener noreferrer"><FaInstagram size={24} /></a>
+            <a href="https://yourwebsite.com" target="_blank" rel="noopener noreferrer"><FaGlobe size={24} /></a>
+          </section>
+
+          {selectedPlan && (
+            <BuyNowModal
+              plan={selectedPlan}
+              onClose={() => setSelectedPlan(null)}
+            />
+          )}
         </div>
+        {selectedPlan && (
+  <BuyNowModal
+    plan={selectedPlan}
+    onClose={() => setSelectedPlan(null)}
+  />
+)}
+
+<Footer />
+
       </Layout>
 
       <style jsx>{`
@@ -148,6 +168,23 @@ const [selectedPlan, setSelectedPlan] = useState(null)
         a {
           color: #0070f3;
           text-decoration: underline;
+        }
+
+        .social-links {
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
+          margin-top: 2rem;
+        }
+
+        .social-links a {
+          color: white;
+          transition: transform 0.2s ease;
+        }
+
+        .social-links a:hover {
+          transform: scale(1.2);
+          color: #4ecdc4;
         }
       `}</style>
     </>
