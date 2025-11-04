@@ -7,6 +7,7 @@ export default function BuyNowForm() {
   const [voucher, setVoucher] = useState(null)
 
   const handleBuyClick = () => {
+    console.log('Buy Now clicked')
     setStep('input')
   }
 
@@ -70,6 +71,8 @@ export default function BuyNowForm() {
         .buy-now-flow {
           text-align: center;
           margin-top: 2rem;
+          position: relative;
+          z-index: 1001;
         }
 
         input {
@@ -89,6 +92,8 @@ export default function BuyNowForm() {
           border-radius: 6px;
           font-size: 1rem;
           cursor: pointer;
+          z-index: 1002;
+          position: relative;
         }
 
         .waiting {
