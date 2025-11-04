@@ -63,7 +63,7 @@ export default function BuyNowModal({ plan, onClose }) {
         }
 
         .modal-content {
-          background: white;
+          background: green;
           padding: 2rem;
           border-radius: 12px;
           width: 90%;
@@ -86,7 +86,7 @@ export default function BuyNowModal({ plan, onClose }) {
           padding: 0.5rem;
           width: 100%;
           margin-bottom: 1rem;
-          border: 1px solid #ccc;
+          border: 1px solid #ccccccff;
           border-radius: 6px;
         }
 
