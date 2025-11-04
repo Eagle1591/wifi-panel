@@ -69,6 +69,7 @@ export default function WifiBillingPanel() {
             <a href="https://yourwebsite.com" target="_blank" rel="noopener noreferrer"><FaGlobe size={24} /></a>
           </section>
 
+          {/* ✅ Only one modal instance */}
           {selectedPlan && (
             <BuyNowModal
               plan={selectedPlan}
@@ -76,15 +77,8 @@ export default function WifiBillingPanel() {
             />
           )}
         </div>
-        {selectedPlan && (
-  <BuyNowModal
-    plan={selectedPlan}
-    onClose={() => setSelectedPlan(null)}
-  />
-)}
 
-<Footer />
-
+        <Footer />
       </Layout>
 
       <style jsx>{`

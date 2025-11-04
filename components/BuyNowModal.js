@@ -48,13 +48,6 @@ export default function BuyNowModal({ plan, onClose }) {
 
         {step === 'waiting' && <p>Waiting for payment confirmation...</p>}
         {step === 'done' && <p>Your voucher: <strong>{voucher}</strong></p>}
-        {selectedPlan && (
-  <BuyNowModal
-    plan={selectedPlan}
-    onClose={() => setSelectedPlan(null)}
-  />
-)}
-
       </div>
 
       <style jsx>{`
