@@ -77,8 +77,6 @@ export default function WifiBillingPanel() {
             />
           )}
         </div>
-
-        <Footer />
       </Layout>
 
       <style jsx>{`
