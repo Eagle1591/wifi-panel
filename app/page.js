@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Layout from '../components/Layout'
 import AnimatedBackground from '../components/AnimatedBackground'
 import BuyNowForm from '../components/BuyNowForm'
+import BuyNowModal from '../components/BuyNowModal'
 
 const wifiPlans = [
   { label: '1 Hour', price: 10, duration: '1hr', mbs: '20 MBPS' },
@@ -17,6 +18,7 @@ const wifiPlans = [
 
 export default function WifiBillingPanel() {
   const [activePlan, setActivePlan] = useState(null)
+const [selectedPlan, setSelectedPlan] = useState(null)
 
   return (
     <>
