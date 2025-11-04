@@ -6,23 +6,14 @@ export default function About() {
     <>
       <AnimatedBackground />
       <Layout>
-        <div className="page-content">
-          <h1>About Us</h1>
-          <p>We are passionate about bringing you the best music experience.</p>
-          <div className="features-grid">
-            <div className="feature-card">
-              <h3>🎵 High Quality</h3>
-              <p>Crystal clear audio quality</p>
-            </div>
-            <div className="feature-card">
-              <h3>🎨 Beautiful Design</h3>
-              <p>Stunning visuals and animations</p>
-            </div>
-            <div className="feature-card">
-              <h3>⚡ Fast & Responsive</h3>
-              <p>Lightning fast performance</p>
-            </div>
-          </div>
+        <div className="page-content about-page">
+          <h1>Welcome to WiFiPanel</h1>
+          <p>
+            WiFiPanel is your all-in-one solution for secure, fast, and beautifully designed internet access.
+            Whether you're managing a hotspot, selling vouchers, or offering premium access — we make it effortless.
+          </p>
+
+          {/* rest of your content */}
         </div>
       </Layout>
     </>
