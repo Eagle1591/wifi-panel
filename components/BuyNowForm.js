@@ -1,13 +1,13 @@
 'use client'
 import { useState } from 'react'
 
-export default function BuyNowForm() {
-  const [step, setStep] = useState('start') // 'start' | 'input' | 'waiting' | 'done'
+export default function BuyNowForm({ amount, label }) {
+  const [step, setStep] = useState('start')
   const [phone, setPhone] = useState('')
   const [voucher, setVoucher] = useState(null)
 
   const handleBuyClick = () => {
-    console.log('Buy Now clicked')
+    console.log(`Buy Now clicked for ${label} @ Ksh ${amount}`)
     setStep('input')
   }
 
@@ -18,22 +18,21 @@ export default function BuyNowForm() {
     const res = await fetch('/api/stk-push', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, amount: 50 })
+      body: JSON.stringify({ phone, amount })
     })
 
     const data = await res.json()
     console.log('STK Push response:', data)
 
-    // Simulate waiting for payment confirmation
     setTimeout(() => {
-      const code = 'WIFI-' + Math.random().toString(36).substr(2, 8).toUpperCase()
+      const code = `${label.toUpperCase()}-${Math.random().toString(36).substr(2, 8).toUpperCase()}`
       setVoucher(code)
       setStep('done')
     }, 7000)
   }
 
   return (
-    <div className="buy-now-flow">
+    <div className="buy-now-flow" style={{ position: 'relative', zIndex: 1001 }}>
       {step === 'start' && (
         <button className="buy-button" onClick={handleBuyClick}>
           Buy Now
@@ -50,63 +49,12 @@ export default function BuyNowForm() {
             placeholder="e.g. 254712345678"
             required
           />
-          <button type="submit">Pay Now</button>
+          <button type="submit">Pay Ksh {amount}</button>
         </form>
       )}
 
-      {step === 'waiting' && (
-        <div className="waiting">
-          <p>Waiting for payment confirmation...</p>
-        </div>
-      )}
-
-      {step === 'done' && (
-        <div className="voucher">
-          <h3>Payment confirmed ✅</h3>
-          <p>Your voucher: <strong>{voucher}</strong></p>
-        </div>
-      )}
-
-      <style jsx>{`
-        .buy-now-flow {
-          text-align: center;
-          margin-top: 2rem;
-          position: relative;
-          z-index: 1001;
-        }
-
-        input {
-          padding: 0.5rem;
-          font-size: 1rem;
-          border-radius: 6px;
-          border: 1px solid #ccc;
-          width: 250px;
-          margin-bottom: 1rem;
-        }
-
-        button {
-          background: #00bfff;
-          color: white;
-          padding: 0.5rem 1rem;
-          border: none;
-          border-radius: 6px;
-          font-size: 1rem;
-          cursor: pointer;
-          z-index: 1002;
-          position: relative;
-        }
-
-        .waiting {
-          font-style: italic;
-          color: #555;
-        }
-
-        .voucher {
-          margin-top: 1rem;
-          font-size: 1.2rem;
-          color: green;
-        }
-      `}</style>
+      {step === 'waiting' && <p>Waiting for payment confirmation...</p>}
+      {step === 'done' && <p>Your voucher: <strong>{voucher}</strong></p>}
     </div>
   )
 }

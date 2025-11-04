@@ -1,19 +1,23 @@
-"use client";
+'use client'
+import { useState } from 'react'
 import Layout from '../components/Layout'
 import AnimatedBackground from '../components/AnimatedBackground'
+import BuyNowForm from '../components/BuyNowForm'
 
 const wifiPlans = [
-  { label: '1 Hour', price: 'Ksh 10', duration: '1hr', mbs: '20 MBPS' },
-  { label: '2 Hours', price: 'Ksh 15', duration: '2hrs', mbs: '20 MBPS' },
-  { label: '4 Hours', price: 'Ksh 20', duration: '4hrs', mbs: '20 MBPS' },
-  { label: '6 Hours', price: 'Ksh 40', duration: '6hrs', mbs: '20 MBPS' },
-  { label: '12 Hours', price: 'Ksh 55', duration: '12hrs', mbs: '20 MBPS' },
-  { label: '1 Day', price: 'Ksh 70', duration: '24hrs', mbs: '20 MBPS' },
-  { label: '3 Days', price: 'Ksh 130', duration: '72hrs', mbs: '20 MBPS' },
-  { label: '1 Week', price: 'Ksh 190', duration: '168hrs', mbs: '20 MBPS' },
+  { label: '1 Hour', price: 10, duration: '1hr', mbs: '20 MBPS' },
+  { label: '2 Hours', price: 15, duration: '2hrs', mbs: '20 MBPS' },
+  { label: '4 Hours', price: 20, duration: '4hrs', mbs: '20 MBPS' },
+  { label: '6 Hours', price: 40, duration: '6hrs', mbs: '20 MBPS' },
+  { label: '12 Hours', price: 55, duration: '12hrs', mbs: '20 MBPS' },
+  { label: '1 Day', price: 70, duration: '24hrs', mbs: '20 MBPS' },
+  { label: '3 Days', price: 130, duration: '72hrs', mbs: '20 MBPS' },
+  { label: '1 Week', price: 190, duration: '168hrs', mbs: '20 MBPS' },
 ]
 
 export default function WifiBillingPanel() {
+  const [activePlan, setActivePlan] = useState(null)
+
   return (
     <>
       <AnimatedBackground />
@@ -28,9 +32,15 @@ export default function WifiBillingPanel() {
             {wifiPlans.map((plan, index) => (
               <div key={index} className="plan-box">
                 <h2>{plan.label}</h2>
-                <p className="price">{plan.price}</p>
+                <p className="price">Ksh {plan.price}</p>
                 <p className="details">Max: {plan.mbs}</p>
-                <button className="btn-primary">Buy Now</button>
+                {activePlan === index ? (
+                  <BuyNowForm amount={plan.price} label={plan.label} />
+                ) : (
+                  <button className="btn-primary" onClick={() => setActivePlan(index)}>
+                    Buy Now
+                  </button>
+                )}
               </div>
             ))}
           </section>
@@ -141,15 +151,3 @@ export default function WifiBillingPanel() {
     </>
   )
 }
-import Footer from '../components/Footer'
-
-
-<Footer />
-import Navigation from '../components/Navigation'
-
-
-<Navigation />
-import MusicPlayer from '../components/MusicPlayer'
-
-
-<MusicPlayer />
